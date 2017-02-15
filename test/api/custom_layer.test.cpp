@@ -85,7 +85,7 @@ public:
 TEST(CustomLayer, Basic) {
     util::RunLoop loop;
 
-    HeadlessBackend backend { test::sharedDisplay() };
+    HeadlessBackend backend;
     OffscreenView view { backend.getContext() };
 
 #ifdef MBGL_ASSET_ZIP

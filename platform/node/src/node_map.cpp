@@ -4,7 +4,6 @@
 #include "node_conversion.hpp"
 #include "node_geojson.hpp"
 
-#include <mbgl/gl/headless_display.hpp>
 #include <mbgl/util/exception.hpp>
 #include <mbgl/style/conversion/source.hpp>
 #include <mbgl/style/conversion/layer.hpp>
@@ -34,11 +33,6 @@ struct NodeMap::RenderOptions {
 };
 
 Nan::Persistent<v8::Function> NodeMap::constructor;
-
-static std::shared_ptr<mbgl::HeadlessDisplay> sharedDisplay() {
-    static auto display = std::make_shared<mbgl::HeadlessDisplay>();
-    return display;
-}
 
 static const char* releasedMessage() {
     return "Map resources have already been released";
@@ -74,9 +68,6 @@ void NodeMap::Init(v8::Local<v8::Object> target) {
 
     constructor.Reset(tpl->GetFunction());
     Nan::Set(target, Nan::New("Map").ToLocalChecked(), tpl->GetFunction());
-
-    // Initialize display connection on module load.
-    sharedDisplay();
 }
 
 /**
@@ -922,7 +913,6 @@ NodeMap::NodeMap(v8::Local<v8::Object> options)
                            ->NumberValue()
                      : 1.0;
       }()),
-      backend(sharedDisplay()),
       map(std::make_unique<mbgl::Map>(backend,
                                       mbgl::Size{ 256, 256 },
                                       pixelRatio,

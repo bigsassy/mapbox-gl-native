@@ -16,18 +16,13 @@ include(cmake/loop-uv.cmake)
 macro(mbgl_platform_core)
     target_add_mason_package(mbgl-core PUBLIC mesa)
 
-    if(WITH_OSMESA)
+    if(WITH_EGL)
         target_sources(mbgl-core
-            PRIVATE platform/default/headless_backend_osmesa.cpp
-            PRIVATE platform/default/mbgl/gl/headless_display.cpp
+            PRIVATE platform/egl/src/mbgl/gl/headless_backend.hpp
+            PRIVATE platform/egl/src/mbgl/gl/headless_backend.cpp
         )
-        target_link_libraries(mbgl-core
-            PUBLIC -lOSMesa
-        )
-    elseif(WITH_EGL)
-        target_sources(mbgl-core
-            PRIVATE platform/linux/src/headless_backend_egl.cpp
-            PRIVATE platform/linux/src/headless_display_egl.cpp
+        target_include_directories(mbgl-core
+            PUBLIC platform/egl/src
         )
         target_link_libraries(mbgl-core
             PUBLIC -lGLESv2
@@ -36,8 +31,11 @@ macro(mbgl_platform_core)
         )
     else()
         target_sources(mbgl-core
-            PRIVATE platform/linux/src/headless_backend_glx.cpp
-            PRIVATE platform/linux/src/headless_display_glx.cpp
+            PRIVATE platform/linux/src/mbgl/gl/headless_backend.hpp
+            PRIVATE platform/linux/src/mbgl/gl/headless_backend.cpp
+        )
+        target_include_directories(mbgl-core
+            PUBLIC platform/linux/src
         )
         target_link_libraries(mbgl-core
             PUBLIC -lGL
@@ -76,10 +74,7 @@ macro(mbgl_platform_core)
         PRIVATE platform/default/png_reader.cpp
         PRIVATE platform/default/webp_reader.cpp
 
-        # Headless view
-        PRIVATE platform/default/mbgl/gl/headless_backend.cpp
-        PRIVATE platform/default/mbgl/gl/headless_backend.hpp
-        PRIVATE platform/default/mbgl/gl/headless_display.hpp
+        # Offscreen view
         PRIVATE platform/default/mbgl/gl/offscreen_view.cpp
         PRIVATE platform/default/mbgl/gl/offscreen_view.hpp
 

@@ -21,7 +21,7 @@ TEST(API, RepeatedRender) {
 
     const auto style = util::read_file("test/fixtures/api/water.json");
 
-    HeadlessBackend backend { test::sharedDisplay() };
+    HeadlessBackend backend;
     OffscreenView view { backend.getContext(), { 256, 512 } };
 #ifdef MBGL_ASSET_ZIP
     // Regenerate with `cd test/fixtures/api/ && zip -r assets.zip assets/`

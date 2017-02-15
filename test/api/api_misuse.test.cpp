@@ -21,7 +21,7 @@ TEST(API, RenderWithoutCallback) {
 
     util::RunLoop loop;
 
-    HeadlessBackend backend { test::sharedDisplay() };
+    HeadlessBackend backend;
     OffscreenView view { backend.getContext(), { 128, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool(4);
@@ -46,7 +46,7 @@ TEST(API, RenderWithoutCallback) {
 TEST(API, RenderWithoutStyle) {
     util::RunLoop loop;
 
-    HeadlessBackend backend { test::sharedDisplay() };
+    HeadlessBackend backend;
     OffscreenView view { backend.getContext(), { 128, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool(4);

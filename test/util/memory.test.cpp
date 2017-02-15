@@ -56,7 +56,7 @@ public:
     }
 
     util::RunLoop runLoop;
-    HeadlessBackend backend { test::sharedDisplay() };
+    HeadlessBackend backend;
     OffscreenView view{ backend.getContext(), { 512, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool { 4 };
@@ -143,7 +143,7 @@ TEST(Memory, Footprint) {
 
     long vectorInitialRSS = getRSS();
     for (unsigned i = 0; i < runs; ++i) {
-        auto vector = std::make_unique<Map>(test.backend, Size{ 256, 256 }, 2, test.fileSource,
+        auto vector = std::make_unique<Map>(test.backend, mbgl::Size{ 256, 256 }, 2, test.fileSource,
                                             test.threadPool, MapMode::Still);
         renderMap(*vector, "mapbox://streets");
         maps.push_back(std::move(vector));
@@ -153,7 +153,7 @@ TEST(Memory, Footprint) {
 
     long rasterInitialRSS = getRSS();
     for (unsigned i = 0; i < runs; ++i) {
-        auto raster = std::make_unique<Map>(test.backend, Size{ 256, 256 }, 2, test.fileSource,
+        auto raster = std::make_unique<Map>(test.backend, mbgl::Size{ 256, 256 }, 2, test.fileSource,
                                             test.threadPool, MapMode::Still);
         renderMap(*raster, "mapbox://satellite");
         maps.push_back(std::move(raster));

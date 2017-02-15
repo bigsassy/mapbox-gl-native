@@ -220,13 +220,10 @@ add_dependencies(mbgl-test
 
 target_sources(mbgl-test
     # Headless view
-    PRIVATE platform/default/mbgl/gl/headless_backend.cpp
-    PRIVATE platform/default/mbgl/gl/headless_backend.hpp
+    PRIVATE platform/egl/src/mbgl/gl/headless_backend.hpp
+    PRIVATE platform/egl/src/mbgl/gl/headless_backend.cpp
     PRIVATE platform/default/mbgl/gl/offscreen_view.cpp
     PRIVATE platform/default/mbgl/gl/offscreen_view.hpp
-
-    PRIVATE platform/linux/src/headless_backend_egl.cpp
-    PRIVATE platform/linux/src/headless_display_egl.cpp
 )
 
 target_compile_options(mbgl-test
@@ -243,6 +240,7 @@ target_include_directories(mbgl-test
     PRIVATE src # TODO: eliminate
     PRIVATE test/include
     PRIVATE test/src
+    PRIVATE platform/egl/src
     PRIVATE platform/default
 )
 
