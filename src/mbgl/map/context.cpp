@@ -1,5 +1,6 @@
 #include <mbgl/map/context.hpp>
 #include <mbgl/map/backend.hpp>
+#include <mbgl/map/backend_scope.hpp>
 #include <mbgl/gl/context.hpp>
 
 namespace mbgl {

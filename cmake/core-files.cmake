@@ -104,11 +104,13 @@ set(MBGL_CORE_FILES
 
     # map
     include/mbgl/map/backend.hpp
+    include/mbgl/map/backend_scope.hpp
     include/mbgl/map/camera.hpp
     include/mbgl/map/context.hpp
     include/mbgl/map/map.hpp
     include/mbgl/map/mode.hpp
     include/mbgl/map/view.hpp
+    src/mbgl/map/backend_scope.cpp
     src/mbgl/map/change.hpp
     src/mbgl/map/context.cpp
     src/mbgl/map/map.cpp

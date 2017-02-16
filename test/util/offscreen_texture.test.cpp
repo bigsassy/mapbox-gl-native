@@ -4,6 +4,7 @@
 #include <mbgl/gl/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
+#include <mbgl/map/backend_scope.hpp>
 
 #include <mbgl/util/offscreen_texture.hpp>
 
