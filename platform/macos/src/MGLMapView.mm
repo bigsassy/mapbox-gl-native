@@ -10,6 +10,7 @@
 #import "MGLGeometry_Private.h"
 #import "MGLMultiPoint_Private.h"
 #import "MGLOfflineStorage_Private.h"
+#import "MGLFoundation_Private.h"
 #import "MGLStyle_Private.h"
 
 #import "MGLAccountManager.h"
@@ -103,11 +104,6 @@ NSImage *MGLDefaultMarkerImage() {
     NSString *path = [[NSBundle mgl_frameworkBundle] pathForResource:MGLDefaultStyleMarkerSymbolName
                                                               ofType:@"pdf"];
     return [[NSImage alloc] initWithContentsOfFile:path];
-}
-
-/// Initializes the run loop shim that lives on the main thread.
-void MGLinitializeRunLoop() {
-    static mbgl::util::RunLoop mainRunLoop;
 }
 
 /// Converts a media timing function into a unit bezier object usable in mbgl.
@@ -246,7 +242,7 @@ public:
 }
 
 - (void)commonInit {
-    MGLinitializeRunLoop();
+    MGLInitializeRunLoop();
 
     _isTargetingInterfaceBuilder = NSProcessInfo.processInfo.mgl_isInterfaceBuilderDesignablesAgent;
 
