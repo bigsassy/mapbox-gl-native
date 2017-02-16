@@ -17,9 +17,9 @@ import com.mapbox.mapboxsdk.annotations.Marker;
 import com.mapbox.mapboxsdk.annotations.Polygon;
 import com.mapbox.mapboxsdk.annotations.Polyline;
 import com.mapbox.mapboxsdk.constants.MapboxConstants;
+import com.mapbox.mapboxsdk.storage.FileSource;
 import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.geometry.ProjectedMeters;
-import com.mapbox.mapboxsdk.offline.OfflineManager;
 import com.mapbox.mapboxsdk.style.layers.CannotAddLayerException;
 import com.mapbox.mapboxsdk.style.layers.Layer;
 import com.mapbox.mapboxsdk.style.layers.NoSuchLayerException;
@@ -48,6 +48,9 @@ final class NativeMapView {
   // Used for callbacks
   private MapView mapView;
 
+  //Hold a reference to prevent it from being GC'd as long as it's used on the native side
+  private final FileSource fileSource;
+
   // Device density
   private final float pixelRatio;
 
@@ -71,15 +74,9 @@ final class NativeMapView {
 
   public NativeMapView(MapView mapView) {
     Context context = mapView.getContext();
-    String dataPath = OfflineManager.getDatabasePath(context);
-
-    // With the availability of offline, we're unifying the ambient (cache) and the offline
-    // databases to be in the same folder, outside cache, to avoid automatic deletion from
-    // the system
-    String cachePath = dataPath;
+    fileSource = FileSource.getInstance(context);
 
     pixelRatio = context.getResources().getDisplayMetrics().density;
-    String apkPath = context.getPackageCodePath();
     int availableProcessors = Runtime.getRuntime().availableProcessors();
     ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
     ActivityManager activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
@@ -99,7 +96,7 @@ final class NativeMapView {
     onMapChangedListeners = new CopyOnWriteArrayList<>();
     this.mapView = mapView;
 
-    nativeInitialize(this, cachePath, apkPath, pixelRatio, availableProcessors, totalMemory);
+    nativeInitialize(this, fileSource, pixelRatio, availableProcessors, totalMemory);
   }
 
   //
@@ -928,7 +925,7 @@ final class NativeMapView {
   // JNI methods
   //
 
-  private native void nativeInitialize(NativeMapView nativeMapView, String cachePath, String apkPath, float pixelRatio, int availableProcessors, long totalMemory);
+  private native void nativeInitialize(NativeMapView nativeMapView, FileSource fileSource, float pixelRatio, int availableProcessors, long totalMemory);
 
   private native void nativeDestroy();
 
