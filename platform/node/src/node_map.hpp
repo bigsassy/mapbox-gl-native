@@ -3,8 +3,8 @@
 #include "node_thread_pool.hpp"
 
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/storage/file_source.hpp>
-#include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 
 #pragma GCC diagnostic push
@@ -59,7 +59,7 @@ public:
     std::unique_ptr<mbgl::AsyncRequest> request(const mbgl::Resource&, mbgl::FileSource::Callback);
 
     const float pixelRatio;
-    mbgl::HeadlessBackend backend;
+    mbgl::Context context;
     std::unique_ptr<mbgl::OffscreenView> view;
     NodeThreadPool threadpool;
     std::unique_ptr<mbgl::Map> map;

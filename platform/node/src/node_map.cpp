@@ -4,6 +4,7 @@
 #include "node_conversion.hpp"
 #include "node_geojson.hpp"
 
+#include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/util/exception.hpp>
 #include <mbgl/style/conversion/source.hpp>
 #include <mbgl/style/conversion/layer.hpp>
@@ -358,7 +359,7 @@ void NodeMap::startRender(NodeMap::RenderOptions options) {
                              static_cast<uint32_t>(options.height * pixelRatio) };
     if (!view || view->size != fbSize) {
         view.reset();
-        view = std::make_unique<mbgl::OffscreenView>(backend.getContext(), fbSize);
+        view = std::make_unique<mbgl::OffscreenView>(context.getGLContext(), fbSize);
     }
 
     if (map->getClasses() != options.classes) {
@@ -913,19 +914,22 @@ NodeMap::NodeMap(v8::Local<v8::Object> options)
                            ->NumberValue()
                      : 1.0;
       }()),
-      map(std::make_unique<mbgl::Map>(backend,
+      context([] {
+          auto backend = std::make_unique<mbgl::HeadlessBackend>();
+          backend->setMapChangeCallback([&](mbgl::MapChange change) {
+              if (change == mbgl::MapChangeDidFailLoadingMap) {
+                  throw std::runtime_error("Requires a map style to be a valid style JSON");
+              }
+          });
+          return backend;
+      }()),
+      map(std::make_unique<mbgl::Map>(context,
                                       mbgl::Size{ 256, 256 },
                                       pixelRatio,
                                       *this,
                                       threadpool,
                                       mbgl::MapMode::Still)),
       async(new uv_async_t) {
-
-    backend.setMapChangeCallback([&](mbgl::MapChange change) {
-        if (change == mbgl::MapChangeDidFailLoadingMap) {
-            throw std::runtime_error("Requires a map style to be a valid style JSON");
-        }
-    });
 
     async->data = this;
     uv_async_init(uv_default_loop(), async, [](UV_ASYNC_PARAMS(h)) {

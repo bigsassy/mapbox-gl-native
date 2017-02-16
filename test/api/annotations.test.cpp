@@ -5,6 +5,7 @@
 #include <mbgl/annotation/annotation.hpp>
 #include <mbgl/sprite/sprite_image.hpp>
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/util/io.hpp>
@@ -23,11 +24,11 @@ std::shared_ptr<SpriteImage> namedMarker(const std::string &name) {
 class AnnotationTest {
 public:
     util::RunLoop loop;
-    HeadlessBackend backend;
-    OffscreenView view { backend.getContext() };
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext() };
     StubFileSource fileSource;
     ThreadPool threadPool { 4 };
-    Map map { backend, view.size, 1, fileSource, threadPool, MapMode::Still };
+    Map map { context, view.size, 1, fileSource, threadPool, MapMode::Still };
 
     void checkRendering(const char * name) {
         test::checkImage(std::string("test/fixtures/annotations/") + name,

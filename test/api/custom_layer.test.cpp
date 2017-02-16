@@ -2,6 +2,7 @@
 
 #include <mbgl/gl/gl.hpp>
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/util/default_thread_pool.hpp>
@@ -85,8 +86,8 @@ public:
 TEST(CustomLayer, Basic) {
     util::RunLoop loop;
 
-    HeadlessBackend backend;
-    OffscreenView view { backend.getContext() };
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext() };
 
 #ifdef MBGL_ASSET_ZIP
     // Regenerate with `cd test/fixtures/api/ && zip -r assets.zip assets/`
@@ -97,19 +98,19 @@ TEST(CustomLayer, Basic) {
 
     ThreadPool threadPool(4);
 
-    Map map(backend, view.size, 1, fileSource, threadPool, MapMode::Still);
+    Map map(context, view.size, 1, fileSource, threadPool, MapMode::Still);
     map.setStyleJSON(util::read_file("test/fixtures/api/water.json"));
     map.setLatLngZoom({ 37.8, -122.5 }, 10);
     map.addLayer(std::make_unique<CustomLayer>(
         "custom",
-        [] (void* context) {
-            reinterpret_cast<TestLayer*>(context)->initialize();
+        [] (void* context_) {
+            reinterpret_cast<TestLayer*>(context_)->initialize();
         },
-        [] (void* context, const CustomLayerRenderParameters&) {
-            reinterpret_cast<TestLayer*>(context)->render();
+        [] (void* context_, const CustomLayerRenderParameters&) {
+            reinterpret_cast<TestLayer*>(context_)->render();
         },
-        [] (void* context) {
-            delete reinterpret_cast<TestLayer*>(context);
+        [] (void* context_) {
+            delete reinterpret_cast<TestLayer*>(context_);
         }, new TestLayer()));
 
     auto layer = std::make_unique<FillLayer>("landcover", "mapbox");

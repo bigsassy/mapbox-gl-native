@@ -2,6 +2,7 @@
 #include <mbgl/test/util.hpp>
 
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/util/default_thread_pool.hpp>
@@ -56,8 +57,8 @@ public:
     }
 
     util::RunLoop runLoop;
-    HeadlessBackend backend;
-    OffscreenView view{ backend.getContext(), { 512, 512 } };
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext(), { 512, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool { 4 };
 
@@ -93,7 +94,7 @@ private:
 TEST(Memory, Vector) {
     MemoryTest test;
 
-    Map map(test.backend, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
+    Map map(test.context, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
     map.setZoom(16); // more map features
     map.setStyleURL("mapbox://streets");
 
@@ -103,7 +104,7 @@ TEST(Memory, Vector) {
 TEST(Memory, Raster) {
     MemoryTest test;
 
-    Map map(test.backend, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
+    Map map(test.context, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
     map.setStyleURL("mapbox://satellite");
 
     test::render(map, test.view);
@@ -129,7 +130,7 @@ TEST(Memory, Footprint) {
 
     // Warm up buffers and cache.
     for (unsigned i = 0; i < 10; ++i) {
-        Map map(test.backend, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
+        Map map(test.context, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
         renderMap(map, "mapbox://streets");
         renderMap(map, "mapbox://satellite");
     };
@@ -143,7 +144,7 @@ TEST(Memory, Footprint) {
 
     long vectorInitialRSS = getRSS();
     for (unsigned i = 0; i < runs; ++i) {
-        auto vector = std::make_unique<Map>(test.backend, mbgl::Size{ 256, 256 }, 2, test.fileSource,
+        auto vector = std::make_unique<Map>(test.context, mbgl::Size{ 256, 256 }, 2, test.fileSource,
                                             test.threadPool, MapMode::Still);
         renderMap(*vector, "mapbox://streets");
         maps.push_back(std::move(vector));
@@ -153,7 +154,7 @@ TEST(Memory, Footprint) {
 
     long rasterInitialRSS = getRSS();
     for (unsigned i = 0; i < runs; ++i) {
-        auto raster = std::make_unique<Map>(test.backend, mbgl::Size{ 256, 256 }, 2, test.fileSource,
+        auto raster = std::make_unique<Map>(test.context, mbgl::Size{ 256, 256 }, 2, test.fileSource,
                                             test.threadPool, MapMode::Still);
         renderMap(*raster, "mapbox://satellite");
         maps.push_back(std::move(raster));

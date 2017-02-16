@@ -1,5 +1,6 @@
 #include <mbgl/test/util.hpp>
 
+#include <mbgl/map/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 
@@ -60,23 +61,21 @@ TEST(GLObject, Value) {
 }
 
 TEST(GLObject, Store) {
-    HeadlessBackend backend;
-    OffscreenView view(backend.getContext());
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext() };
+    BackendScope scope { context.getBackend() };
 
-    gl::Context context;
-    EXPECT_TRUE(context.empty());
+    EXPECT_TRUE(context.getGLContext().empty());
 
-    gl::UniqueTexture texture = context.createTexture();
+    gl::UniqueTexture texture = context.getGLContext().createTexture();
     EXPECT_NE(texture.get(), 0u);
     texture.reset();
-    EXPECT_FALSE(context.empty());
-    context.performCleanup();
-    EXPECT_FALSE(context.empty());
-    context.reset();
-    EXPECT_TRUE(context.empty());
+    EXPECT_FALSE(context.getGLContext().empty());
+    context.getGLContext().performCleanup();
+    EXPECT_FALSE(context.getGLContext().empty());
+    context.getGLContext().reset();
+    EXPECT_TRUE(context.getGLContext().empty());
 
-    context.reset();
-    EXPECT_TRUE(context.empty());
-
-    backend.deactivate();
+    context.getGLContext().reset();
+    EXPECT_TRUE(context.getGLContext().empty());
 }

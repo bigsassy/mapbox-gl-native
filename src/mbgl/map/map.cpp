@@ -1,4 +1,5 @@
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/map/camera.hpp>
 #include <mbgl/map/view.hpp>
 #include <mbgl/map/backend.hpp>
@@ -49,7 +50,7 @@ struct StillImageRequest {
 class Map::Impl : public style::Observer {
 public:
     Impl(Map&,
-         Backend&,
+         Context&,
          float pixelRatio,
          FileSource&,
          Scheduler&,
@@ -70,6 +71,7 @@ public:
     void loadStyleJSON(const std::string&);
 
     Map& map;
+    Context& context;
     Backend& backend;
     FileSource& fileSource;
     Scheduler& scheduler;
@@ -103,7 +105,7 @@ public:
     std::unique_ptr<StillImageRequest> stillImageRequest;
 };
 
-Map::Map(Backend& backend,
+Map::Map(Context& context,
          const Size size,
          const float pixelRatio,
          FileSource& fileSource,
@@ -113,7 +115,7 @@ Map::Map(Backend& backend,
          ConstrainMode constrainMode,
          ViewportMode viewportMode)
     : impl(std::make_unique<Impl>(*this,
-                                  backend,
+                                  context,
                                   pixelRatio,
                                   fileSource,
                                   scheduler,
@@ -125,7 +127,7 @@ Map::Map(Backend& backend,
 }
 
 Map::Impl::Impl(Map& map_,
-                Backend& backend_,
+                Context& context_,
                 float pixelRatio_,
                 FileSource& fileSource_,
                 Scheduler& scheduler_,
@@ -134,7 +136,8 @@ Map::Impl::Impl(Map& map_,
                 ConstrainMode constrainMode_,
                 ViewportMode viewportMode_)
     : map(map_),
-      backend(backend_),
+      context(context_),
+      backend(context.getBackend()),
       fileSource(fileSource_),
       scheduler(scheduler_),
       transform([this](MapChange change) { backend.notifyMapChange(change); },
@@ -259,7 +262,7 @@ void Map::Impl::render(View& view) {
     updateFlags = Update::Nothing;
 
     if (!painter) {
-        painter = std::make_unique<Painter>(backend.getContext(), transform.getState(), pixelRatio);
+        painter = std::make_unique<Painter>(context.getGLContext(), transform.getState(), pixelRatio);
     }
 
     if (mode == MapMode::Continuous) {

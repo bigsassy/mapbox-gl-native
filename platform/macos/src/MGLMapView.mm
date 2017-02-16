@@ -20,6 +20,7 @@
 #import "MGLMapViewDelegate.h"
 
 #import <mbgl/map/map.hpp>
+#import <mbgl/map/context.hpp>
 #import <mbgl/map/view.hpp>
 #import <mbgl/annotation/annotation.hpp>
 #import <mbgl/map/camera.hpp>
@@ -51,6 +52,7 @@
 
 #import <QuartzCore/QuartzCore.h>
 
+class MGLMapBackendImpl;
 class MGLMapViewImpl;
 class MGLAnnotationContext;
 
@@ -150,6 +152,7 @@ public:
 @implementation MGLMapView {
     /// Cross-platform map view controller.
     mbgl::Map *_mbglMap;
+    mbgl::Context *_mbglContext;
     MGLMapViewImpl *_mbglView;
     mbgl::ThreadPool *_mbglThreadPool;
 
@@ -251,7 +254,8 @@ public:
     _isTargetingInterfaceBuilder = NSProcessInfo.processInfo.mgl_isInterfaceBuilderDesignablesAgent;
 
     // Set up cross-platform controllers and resources.
-    _mbglView = new MGLMapViewImpl(self);
+    _mbglContext = new mbgl::Context(std::make_unique<MGLMapBackendImpl>(self));
+    _mbglView = new MGLMapViewImpl(self, _mbglContext->getGLContext());
 
     // Delete the pre-offline ambient cache at
     // ~/Library/Caches/com.mapbox.sdk.ios/cache.db.
@@ -268,7 +272,7 @@ public:
     mbgl::DefaultFileSource* mbglFileSource = [MGLOfflineStorage sharedOfflineStorage].mbglFileSource;
 
     _mbglThreadPool = new mbgl::ThreadPool(4);
-    _mbglMap = new mbgl::Map(*_mbglView, self.size, [NSScreen mainScreen].backingScaleFactor, *mbglFileSource, *_mbglThreadPool, mbgl::MapMode::Continuous, mbgl::GLContextMode::Unique, mbgl::ConstrainMode::None, mbgl::ViewportMode::Default);
+    _mbglMap = new mbgl::Map(*_mbglContext, self.size, [NSScreen mainScreen].backingScaleFactor, *mbglFileSource, *_mbglThreadPool, mbgl::MapMode::Continuous, mbgl::GLContextMode::Unique, mbgl::ConstrainMode::None, mbgl::ViewportMode::Default);
     [self validateTileCacheSize];
 
     // Install the OpenGL layer. Interface Builder’s synchronous drawing means
@@ -525,6 +529,10 @@ public:
     if (_mbglThreadPool) {
         delete _mbglThreadPool;
         _mbglThreadPool = nullptr;
+    }
+    if (_mbglContext) {
+        delete _mbglContext;
+        _mbglContext = nullptr;
     }
 }
 
@@ -2696,9 +2704,9 @@ public:
 }
 
 /// Adapter responsible for bridging calls from mbgl to MGLMapView and Cocoa.
-class MGLMapViewImpl : public mbgl::View, public mbgl::Backend {
+class MGLMapBackendImpl : public mbgl::Backend {
 public:
-    MGLMapViewImpl(MGLMapView *nativeView_)
+    MGLMapBackendImpl(MGLMapView *nativeView_)
         : nativeView(nativeView_) {}
 
     void notifyMapChange(mbgl::MapChange change) override {
@@ -2726,35 +2734,50 @@ public:
         [NSOpenGLContext clearCurrentContext];
     }
 
+private:
+    /// Cocoa map view that this adapter bridges to.
+    __weak MGLMapView *nativeView = nullptr;
+
+    /// The reference counted count of activation calls
+    NSUInteger activationCount = 0;
+};
+
+/// Adapter responsible for bridging calls from mbgl to MGLMapView and Cocoa.
+class MGLMapViewImpl : public mbgl::View {
+public:
+    MGLMapViewImpl(MGLMapView *nativeView_, mbgl::gl::Context& context_)
+        : nativeView(nativeView_),
+          context(context_) {}
+
     mbgl::gl::value::Viewport::Type getViewport() const {
         return { 0, 0, nativeView.framebufferSize };
     }
 
     void updateViewBinding() {
         fbo = mbgl::gl::value::BindFramebuffer::Get();
-        getContext().bindFramebuffer.setCurrentValue(fbo);
-        getContext().viewport.setCurrentValue(getViewport());
-        assert(mbgl::gl::value::Viewport::Get() == getContext().viewport.getCurrentValue());
+        context.bindFramebuffer.setCurrentValue(fbo);
+        context.viewport.setCurrentValue(getViewport());
+        assert(mbgl::gl::value::Viewport::Get() == context.viewport.getCurrentValue());
     }
 
     void bind() override {
-        getContext().bindFramebuffer = fbo;
-        getContext().viewport = getViewport();
+        context.bindFramebuffer = fbo;
+        context.viewport = getViewport();
     }
 
     mbgl::PremultipliedImage readStillImage() {
-        return getContext().readFramebuffer<mbgl::PremultipliedImage>(nativeView.framebufferSize);
+        return context.readFramebuffer<mbgl::PremultipliedImage>(nativeView.framebufferSize);
     }
 
 private:
     /// Cocoa map view that this adapter bridges to.
     __weak MGLMapView *nativeView = nullptr;
 
+    /// Object representing the GL context.
+    mbgl::gl::Context& context;
+
     /// The current framebuffer of the NSOpenGLLayer we are painting to.
     GLint fbo = 0;
-
-    /// The reference counted count of activation calls
-    NSUInteger activationCount = 0;
 };
 
 @end

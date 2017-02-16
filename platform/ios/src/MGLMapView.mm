@@ -8,6 +8,7 @@
 #import <OpenGLES/EAGL.h>
 
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/map/view.hpp>
 #include <mbgl/annotation/annotation.hpp>
 #include <mbgl/sprite/sprite_image.hpp>
@@ -268,6 +269,7 @@ public:
 @implementation MGLMapView
 {
     mbgl::Map *_mbglMap;
+    mbgl::Context *_mbglContext;
     MBGLView *_mbglView;
     mbgl::ThreadPool *_mbglThreadPool;
 
@@ -417,7 +419,8 @@ public:
     self.clipsToBounds = YES;
 
     // setup mbgl view
-    _mbglView = new MBGLView(self);
+    _mbglContext = new mbgl::Context(std::make_unique<MBGLBackend>(self));
+    _mbglView = new MBGLView(self, _mbglContext->getGLContext());
 
     // Delete the pre-offline ambient cache at ~/Library/Caches/cache.db.
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
@@ -428,7 +431,7 @@ public:
     mbgl::DefaultFileSource *mbglFileSource = [MGLOfflineStorage sharedOfflineStorage].mbglFileSource;
     const float scaleFactor = [UIScreen instancesRespondToSelector:@selector(nativeScale)] ? [[UIScreen mainScreen] nativeScale] : [[UIScreen mainScreen] scale];
     _mbglThreadPool = new mbgl::ThreadPool(4);
-    _mbglMap = new mbgl::Map(*_mbglView, self.size, scaleFactor, *mbglFileSource, *_mbglThreadPool, mbgl::MapMode::Continuous, mbgl::GLContextMode::Unique, mbgl::ConstrainMode::None, mbgl::ViewportMode::Default);
+    _mbglMap = new mbgl::Map(*_mbglContext, self.size, scaleFactor, *mbglFileSource, *_mbglThreadPool, mbgl::MapMode::Continuous, mbgl::GLContextMode::Unique, mbgl::ConstrainMode::None, mbgl::ViewportMode::Default);
     [self validateTileCacheSize];
 
     // start paused if in IB
@@ -699,9 +702,10 @@ public:
         _mbglThreadPool = nullptr;
     }
 
-    if ([[EAGLContext currentContext] isEqual:_context])
+    if (_mbglContext)
     {
-        [EAGLContext setCurrentContext:nil];
+        delete _mbglContext;
+        _mbglContext = nullptr;
     }
 
     [self.logoViewConstraints removeAllObjects];
@@ -5274,38 +5278,10 @@ public:
     return _annotationViewReuseQueueByIdentifier[identifier];
 }
 
-class MBGLView : public mbgl::View, public mbgl::Backend
+class MBGLBackend : public mbgl::Backend
 {
 public:
-    MBGLView(MGLMapView* nativeView_) : nativeView(nativeView_) {
-    }
-
-    mbgl::gl::value::Viewport::Type getViewport() const {
-        return { 0, 0, nativeView.framebufferSize };
-    }
-
-    /// This function is called before we start rendering, when iOS invokes our rendering method.
-    /// iOS already sets the correct framebuffer and viewport for us, so we need to update the
-    /// context state with the anticipated values.
-    void updateViewBinding() {
-        // We are using 0 as the placeholder value for the GLKView's framebuffer.
-        getContext().bindFramebuffer.setCurrentValue(0);
-        getContext().viewport.setCurrentValue(getViewport());
-        assert(mbgl::gl::value::Viewport::Get() == getContext().viewport.getCurrentValue());
-    }
-
-    void bind() override {
-        if (getContext().bindFramebuffer != 0) {
-            // Something modified our state, and we need to bind the original drawable again.
-            // Doing this also sets the viewport to the full framebuffer.
-            // Note that in reality, iOS does not use the Framebuffer 0 (it's typically 1), and we
-            // only use this is a placeholder value.
-            [nativeView.glView bindDrawable];
-            updateViewBinding();
-        } else {
-            // Our framebuffer is still bound, but the viewport might have changed.
-            getContext().viewport = getViewport();
-        }
+    MBGLBackend(MGLMapView* nativeView_) : nativeView(nativeView_) {
     }
 
     void notifyMapChange(mbgl::MapChange change) override
@@ -5342,6 +5318,45 @@ private:
     __weak MGLMapView *nativeView = nullptr;
 
     NSUInteger activationCount = 0;
+};
+
+class MBGLView : public mbgl::View
+{
+public:
+    MBGLView(MGLMapView* nativeView_, mbgl::gl::Context& context_) : nativeView(nativeView_), context(context_) {
+    }
+
+    mbgl::gl::value::Viewport::Type getViewport() const {
+        return { 0, 0, nativeView.framebufferSize };
+    }
+
+    /// This function is called before we start rendering, when iOS invokes our rendering method.
+    /// iOS already sets the correct framebuffer and viewport for us, so we need to update the
+    /// context state with the anticipated values.
+    void updateViewBinding() {
+        // We are using 0 as the placeholder value for the GLKView's framebuffer.
+        context.bindFramebuffer.setCurrentValue(0);
+        context.viewport.setCurrentValue(getViewport());
+        assert(mbgl::gl::value::Viewport::Get() == context.viewport.getCurrentValue());
+    }
+
+    void bind() override {
+        if (context.bindFramebuffer != 0) {
+            // Something modified our state, and we need to bind the original drawable again.
+            // Doing this also sets the viewport to the full framebuffer.
+            // Note that in reality, iOS does not use the Framebuffer 0 (it's typically 1), and we
+            // only use this is a placeholder value.
+            [nativeView.glView bindDrawable];
+            updateViewBinding();
+        } else {
+            // Our framebuffer is still bound, but the viewport might have changed.
+            context.viewport = getViewport();
+        }
+    }
+
+private:
+    __weak MGLMapView *nativeView = nullptr;
+    mbgl::gl::Context& context;
 };
 
 @end

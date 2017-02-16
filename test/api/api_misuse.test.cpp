@@ -3,6 +3,7 @@
 #include <mbgl/test/fixture_log_observer.hpp>
 
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/storage/online_file_source.hpp>
@@ -21,13 +22,13 @@ TEST(API, RenderWithoutCallback) {
 
     util::RunLoop loop;
 
-    HeadlessBackend backend;
-    OffscreenView view { backend.getContext(), { 128, 512 } };
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext(), { 128, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool(4);
 
     std::unique_ptr<Map> map =
-        std::make_unique<Map>(backend, view.size, 1, fileSource, threadPool, MapMode::Still);
+        std::make_unique<Map>(context, view.size, 1, fileSource, threadPool, MapMode::Still);
     map->renderStill(view, nullptr);
 
     // Force Map thread to join.
@@ -46,12 +47,12 @@ TEST(API, RenderWithoutCallback) {
 TEST(API, RenderWithoutStyle) {
     util::RunLoop loop;
 
-    HeadlessBackend backend;
-    OffscreenView view { backend.getContext(), { 128, 512 } };
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext(), { 128, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool(4);
 
-    Map map(backend, view.size, 1, fileSource, threadPool, MapMode::Still);
+    Map map(context, view.size, 1, fileSource, threadPool, MapMode::Still);
 
     std::exception_ptr error;
     map.renderStill(view, [&](std::exception_ptr error_) {

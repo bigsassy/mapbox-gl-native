@@ -2,6 +2,7 @@
 #include <mbgl/test/fixture_log_observer.hpp>
 
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/context.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/util/default_thread_pool.hpp>
@@ -25,8 +26,9 @@ TEST(API, TEST_REQUIRES_SERVER(RenderMissingTile)) {
 
     const auto style = util::read_file("test/fixtures/api/water_missing_tiles.json");
 
-    HeadlessBackend backend;
-    OffscreenView view { backend.getContext(), { 256, 512 } };
+    Context context { std::make_unique<HeadlessBackend>() };
+    OffscreenView view { context.getGLContext(), { 256, 512 } };
+
 #ifdef MBGL_ASSET_ZIP
     // Regenerate with `cd test/fixtures/api/ && zip -r assets.zip assets/`
     DefaultFileSource fileSource(":memory:", "test/fixtures/api/assets.zip");
@@ -38,7 +40,7 @@ TEST(API, TEST_REQUIRES_SERVER(RenderMissingTile)) {
 
     Log::setObserver(std::make_unique<FixtureLogObserver>());
 
-    Map map(backend, view.size, 1, fileSource, threadPool, MapMode::Still);
+    Map map(context, view.size, 1, fileSource, threadPool, MapMode::Still);
 
     std::string message;
 

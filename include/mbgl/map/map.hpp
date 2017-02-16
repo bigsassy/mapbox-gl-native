@@ -18,7 +18,7 @@
 
 namespace mbgl {
 
-class Backend;
+class Context;
 class View;
 class FileSource;
 class Scheduler;
@@ -33,7 +33,7 @@ class Layer;
 
 class Map : private util::noncopyable {
 public:
-    explicit Map(Backend&,
+    explicit Map(Context&,
                  Size size,
                  float pixelRatio,
                  FileSource&,

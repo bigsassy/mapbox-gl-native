@@ -15,7 +15,6 @@
 #include <mbgl/gl/color_mode.hpp>
 #include <mbgl/util/noncopyable.hpp>
 
-
 #include <functional>
 #include <memory>
 #include <vector>
@@ -24,9 +23,6 @@
 #include <unordered_map>
 
 namespace mbgl {
-
-class View;
-
 namespace gl {
 
 constexpr size_t TextureMax = 64;

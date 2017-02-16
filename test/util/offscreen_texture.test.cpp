@@ -11,7 +11,9 @@ using namespace mbgl;
 
 TEST(OffscreenTexture, EmptyRed) {
     HeadlessBackend backend;
-    OffscreenView view(backend.getContext(), { 512, 256 });
+    BackendScope scope { backend };
+    gl::Context context;
+    OffscreenView view { context, { 512, 256 } };
     view.bind();
 
     MBGL_CHECK_ERROR(glClearColor(1.0f, 0.0f, 0.0f, 1.0f));
@@ -68,7 +70,8 @@ struct Buffer {
 
 TEST(OffscreenTexture, RenderToTexture) {
     HeadlessBackend backend;
-    auto& context = backend.getContext();
+    BackendScope scope { backend };
+    gl::Context context;
 
     MBGL_CHECK_ERROR(glEnable(GL_BLEND));
     MBGL_CHECK_ERROR(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
@@ -160,6 +163,4 @@ void main() {
         image = view.readStillImage();
         test::checkImage("test/fixtures/offscreen_texture/render-to-fbo-composited", image, 0, 0.1);
     }
-
-    context.reset();
 }
