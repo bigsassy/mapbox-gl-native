@@ -2718,19 +2718,11 @@ public:
     }
 
     void activate() override {
-        if (activationCount++) {
-            return;
-        }
-
         MGLOpenGLLayer *layer = (MGLOpenGLLayer *)nativeView.layer;
         [layer.openGLContext makeCurrentContext];
     }
 
     void deactivate() override {
-        if (--activationCount) {
-            return;
-        }
-
         [NSOpenGLContext clearCurrentContext];
     }
 

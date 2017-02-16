@@ -100,8 +100,6 @@ private:
     mbgl::ThreadPool threadPool;
     std::unique_ptr<mbgl::Map> map;
     mbgl::EdgeInsets insets;
-
-    unsigned active = 0;
 };
 }
 }

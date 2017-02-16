@@ -97,10 +97,6 @@ void NativeMapView::bind() {
 }
 
 void NativeMapView::activate() {
-    if (active++) {
-        return;
-    }
-
     oldDisplay = eglGetCurrentDisplay();
     oldReadSurface = eglGetCurrentSurface(EGL_READ);
     oldDrawSurface = eglGetCurrentSurface(EGL_DRAW);
@@ -125,10 +121,6 @@ void NativeMapView::activate() {
 }
 
 void NativeMapView::deactivate() {
-    if (--active) {
-        return;
-    }
-
     assert(vm != nullptr);
 
     if (oldContext != context && oldContext != EGL_NO_CONTEXT) {
