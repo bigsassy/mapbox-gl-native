@@ -26,7 +26,6 @@
 #import <mbgl/map/camera.hpp>
 #import <mbgl/storage/reachability.h>
 #import <mbgl/util/default_thread_pool.hpp>
-#import <mbgl/gl/extension.hpp>
 #import <mbgl/gl/context.hpp>
 #import <mbgl/map/backend.hpp>
 #import <mbgl/sprite/sprite_image.hpp>
@@ -787,20 +786,6 @@ public:
 
 - (void)renderSync {
     if (!self.dormant) {
-        // Enable vertex buffer objects.
-        mbgl::gl::InitializeExtensions([](const char *name) {
-            static CFBundleRef framework = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl"));
-            if (!framework) {
-                throw std::runtime_error("Failed to load OpenGL framework.");
-            }
-
-            CFStringRef str = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
-            void *symbol = CFBundleGetFunctionPointerForName(framework, str);
-            CFRelease(str);
-
-            return reinterpret_cast<mbgl::gl::glProc>(symbol);
-        });
-
         _mbglView->updateViewBinding();
         _mbglMap->render(*_mbglView);
 
@@ -2711,6 +2696,19 @@ public:
 
     void notifyMapChange(mbgl::MapChange change) override {
         [nativeView notifyMapChange:change];
+    }
+
+    ProcAddress getProcAddress(const char * name) override {
+        static CFBundleRef framework = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengl"));
+        if (!framework) {
+            throw std::runtime_error("Failed to load OpenGL framework.");
+        }
+
+        CFStringRef str = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
+        void *symbol = CFBundleGetFunctionPointerForName(framework, str);
+        CFRelease(str);
+
+        return reinterpret_cast<ProcAddress>(symbol);
     }
 
     void invalidate() override {

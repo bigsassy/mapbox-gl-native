@@ -18,8 +18,9 @@ public:
     void invalidate() override;
     void activate() override;
     void deactivate() override;
-    void notifyMapChange(MapChange) override;
+    ProcAddress getProcAddress(const char * name) override;
 
+    void notifyMapChange(MapChange) override;
     void setMapChangeCallback(std::function<void(MapChange)>&& cb) { mapChangeCallback = std::move(cb); }
 
 private:

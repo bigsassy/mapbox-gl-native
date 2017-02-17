@@ -12,6 +12,10 @@ public:
     // in the near future. (Not called for Map::renderStill() mode.)
     virtual void invalidate() = 0;
 
+    // Look up the address of an extension function.
+    using ProcAddress = void (*)();
+    virtual ProcAddress getProcAddress(const char * name) = 0;
+
     // Notifies a watcher of map x/y/scale/rotation changes.
     virtual void notifyMapChange(MapChange) {}
 

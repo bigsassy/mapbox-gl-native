@@ -1,5 +1,4 @@
 #include <mbgl/gl/headless_backend.hpp>
-#include <mbgl/gl/extension.hpp>
 #include <mbgl/util/logging.hpp>
 
 #include <EGL/egl.h>
@@ -69,9 +68,6 @@ HeadlessBackend::HeadlessBackend() {
         throw std::runtime_error("Could not create surface: " + std::to_string(eglGetError()));
     }
 #endif // __ANDROID__
-
-    activate();
-    gl::InitializeExtensions(eglGetProcAddress);
 }
 
 HeadlessBackend::~HeadlessBackend() {
@@ -102,6 +98,10 @@ void HeadlessBackend::deactivate() {
 
 void HeadlessBackend::invalidate() {
     assert(false);
+}
+
+Backend::ProcAddress HeadlessBackend::getProcAddress(const char * name) {
+    return eglGetProcAddress(name);
 }
 
 void HeadlessBackend::notifyMapChange(MapChange change) {

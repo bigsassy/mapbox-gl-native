@@ -1,5 +1,4 @@
 #include <mbgl/gl/headless_backend.hpp>
-#include <mbgl/gl/extension.hpp>
 #include <mbgl/util/logging.hpp>
 
 #include <cassert>
@@ -65,11 +64,6 @@ HeadlessBackend::HeadlessBackend() {
         None
     };
     glxPbuffer = glXCreatePbuffer(xDisplay, fbConfigs[0], pbufferAttributes);
-
-    activate();
-    gl::InitializeExtensions([] (const char* name) {
-        return glXGetProcAddress(reinterpret_cast<const GLubyte*>(name))
-    });
 }
 
 HeadlessBackend::~HeadlessBackend() {
@@ -93,6 +87,10 @@ void HeadlessBackend::deactivate() {
 
 void HeadlessBackend::invalidate() {
     assert(false);
+}
+
+Backend::ProcAddress HeadlessBackend::getProcAddress(const char * name) {
+    return glXGetProcAddress(reinterpret_cast<const GLubyte*>(name));
 }
 
 void HeadlessBackend::notifyMapChange(MapChange change) {

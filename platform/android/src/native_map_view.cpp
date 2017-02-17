@@ -13,7 +13,6 @@
 #include <mbgl/util/platform.hpp>
 #include <mbgl/util/event.hpp>
 #include <mbgl/util/logging.hpp>
-#include <mbgl/gl/extension.hpp>
 #include <mbgl/gl/context.hpp>
 #include <mbgl/util/constants.hpp>
 #include <mbgl/util/image.hpp>
@@ -148,6 +147,10 @@ void NativeMapView::invalidate() {
     if (env->ExceptionCheck()) {
         env->ExceptionDescribe();
     }
+}
+
+void (*)() NativeMapView::getProcAddress(const char * name) {
+    return reinterpret_cast<void (*)()>(eglGetProcAddress(name));
 }
 
 void NativeMapView::render() {
@@ -372,10 +375,6 @@ void NativeMapView::createSurface(ANativeWindow *window_) {
                              eglGetError());
             throw std::runtime_error("eglMakeCurrent() failed");
         }
-
-        mbgl::gl::InitializeExtensions([] (const char * name) {
-             return reinterpret_cast<mbgl::gl::glProc>(eglGetProcAddress(name));
-        });
     }
 }
 

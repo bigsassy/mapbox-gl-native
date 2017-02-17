@@ -4,10 +4,13 @@
 #include <utility>
 
 namespace mbgl {
+
+class Backend;
+
 namespace gl {
 
 using glProc = void (*)();
-void InitializeExtensions(glProc (*getProcAddress)(const char*));
+void InitializeExtensions(Backend&);
 
 namespace detail {
 

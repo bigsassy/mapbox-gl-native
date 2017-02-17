@@ -28,6 +28,8 @@
 #include <mbgl/util/logging.hpp>
 #include <mbgl/util/string.hpp>
 #include <mbgl/math/log2.hpp>
+#include <mbgl/gl/debugging.hpp>
+#include <mbgl/gl/extension.hpp>
 
 namespace mbgl {
 
@@ -263,6 +265,9 @@ void Map::Impl::render(View& view) {
     updateFlags = Update::Nothing;
 
     if (!painter) {
+        // This is where we start using the OpenGL API for the first time.
+        gl::InitializeExtensions(backend);
+        gl::debugging::enable();
         painter = std::make_unique<Painter>(context.getGLContext(), transform.getState(), pixelRatio);
     }
 

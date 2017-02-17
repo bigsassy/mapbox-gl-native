@@ -1,5 +1,6 @@
 #include <mbgl/gl/extension.hpp>
 #include <mbgl/gl/gl.hpp>
+#include <mbgl/map/backend.hpp>
 
 #include <mutex>
 #include <string>
@@ -25,14 +26,14 @@ ExtensionFunctionBase::ExtensionFunctionBase(std::initializer_list<Probe> probes
 
 static std::once_flag initializeExtensionsOnce;
 
-void InitializeExtensions(glProc (*getProcAddress)(const char*)) {
-    std::call_once(initializeExtensionsOnce, [getProcAddress] {
+void InitializeExtensions(Backend& backend) {
+    std::call_once(initializeExtensionsOnce, [&backend] {
         if (const char* extensions =
                 reinterpret_cast<const char*>(MBGL_CHECK_ERROR(glGetString(GL_EXTENSIONS)))) {
             for (auto fn : detail::extensionFunctions()) {
                 for (auto probe : fn.second) {
                     if (strstr(extensions, probe.first) != nullptr) {
-                        *fn.first = getProcAddress(probe.second);
+                        *fn.first = backend.getProcAddress(probe.second);
                         break;
                     }
                 }

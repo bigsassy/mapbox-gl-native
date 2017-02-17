@@ -1,5 +1,4 @@
 #include <mbgl/gl/headless_backend.hpp>
-#include <mbgl/gl/extension.hpp>
 
 #include <cassert>
 #include <stdexcept>
@@ -14,20 +13,6 @@ HeadlessBackend::HeadlessBackend() {
     }
 
     glContext.multiThreaded = YES;
-
-    activate();
-    gl::InitializeExtensions([] (const char * name) {
-        static CFBundleRef framework = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengles"));
-        if (!framework) {
-            throw std::runtime_error("Failed to load OpenGL framework.");
-        }
-
-        CFStringRef str = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
-        void* symbol = CFBundleGetFunctionPointerForName(framework, str);
-        CFRelease(str);
-
-        return reinterpret_cast<gl::glProc>(symbol);
-    });
 }
 
 void HeadlessBackend::activate() {
@@ -40,6 +25,19 @@ void HeadlessBackend::deactivate() {
 
 void HeadlessBackend::invalidate() {
     assert(false);
+}
+
+Backend::ProcAddress HeadlessBackend::getProcAddress(const char * name) {
+    static CFBundleRef framework = CFBundleGetBundleWithIdentifier(CFSTR("com.apple.opengles"));
+    if (!framework) {
+        throw std::runtime_error("Failed to load OpenGL framework.");
+    }
+
+    CFStringRef str = CFStringCreateWithCString(kCFAllocatorDefault, name, kCFStringEncodingASCII);
+    void* symbol = CFBundleGetFunctionPointerForName(framework, str);
+    CFRelease(str);
+
+    return reinterpret_cast<ProcAddress>(symbol);
 }
 
 void HeadlessBackend::notifyMapChange(MapChange change) {
